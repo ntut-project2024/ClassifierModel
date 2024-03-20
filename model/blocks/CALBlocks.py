@@ -28,7 +28,8 @@ class CALBlocks(AttnBlocks):
             is_causal : bool = False
         )->tuple[Tensor, Optional[Tensor]]:
 
-        kv = kv.last_hidden_state.to(self._devConf.device).to(self._devConf.dtype)
+        kv = (kv.last_hidden_state
+            )
 
         query, attnWeight = self._mha[0](
                 query=query,

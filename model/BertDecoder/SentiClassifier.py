@@ -11,6 +11,7 @@ from utils.DevConf import DevConf
 from utils.AttnBlocks import AttnBlocks
 from model.blocks.CALBlocks import CALBlocks
 from model.blocks.CACBlocks import CACBlocks
+from model.blocks.CAPBlocks import CAPBlocks
 
 
 class SentiClassifier(nn.Module):
@@ -29,7 +30,7 @@ class SentiClassifier(nn.Module):
         else:
             self.mapper = MapperFactory(conf=conf, blockType=blockType, devConf=devConf)
         self.IsNeedHiddenState = not (blockType == BlockType.LAST)
-        self._Q = nn.parameter.Parameter(torch.randn(1, conf.hidDim, device=devConf.device, dtype=devConf.dtype))
+        self._Q = nn.Parameter(torch.randn(1, conf.hidDim, device=devConf.device, dtype=devConf.dtype))
         
         self._layerNum = conf.layerNum
     
@@ -55,7 +56,7 @@ def MapperFactory(
     elif blockType == BlockType.CROSS:
         return CACBlocks(conf, devConf)
     elif blockType == BlockType.PARALLEL:
-        return CACBlocks(conf, devConf)
+        return CAPBlocks(conf, devConf)
     else:
         raise ValueError('blockType must be either "last", "cross" or "parallel"')
     

@@ -28,7 +28,9 @@ class CACBlocks(AttnBlocks):
             is_causal : bool = False
         )->tuple[Tensor, Optional[Tensor]]:
 
-        kvs = [tensor.to(self._devConf.device).to(self._devConf.dtype) for tensor in kv.hidden_states]
+        kvs = [
+            tensor
+            for tensor in kv.hidden_states]
         kvLen = len(kvs) - 1
         if kvLen < self._layerNum:
             print(f'Warning: kvLen: {kvLen} < layerNum, the rest of the layers will operate as self-attention')

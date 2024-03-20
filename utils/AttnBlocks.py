@@ -14,13 +14,13 @@ class AttnBlocks(nn.Module):
         )->None:
         super(AttnBlocks, self).__init__()
 
-        self._mha = [MHABlock(
+        self._mha = nn.ModuleList([MHABlock(
             conf.hidDim,
             conf.nHead,
             batch_first=True,
             device=devConf.device,
             dtype=devConf.dtype,
-        ) for _ in range(conf.layerNum)]
+        ) for _ in range(conf.layerNum)])
 
         self._layerNum = conf.layerNum
         self._devConf = devConf
