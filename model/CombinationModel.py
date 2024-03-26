@@ -11,14 +11,15 @@ class CombinationModel(nn.Module):
     def __init__(self,
             distilBert: DistilBertModel,
             decoder: nn.Module,
-            outputProject: nn.Linear
+            outputProject: nn.Linear,
+            devConf: DevConf = DevConf()
         ):
         
         super(CombinationModel, self).__init__()
-        self.distilBert = distilBert
-        self.decoder = decoder
-        self.outProj = outputProject
-        self.softmax = nn.Softmax(dim=1)
+        self.distilBert = distilBert.to(devConf.device).to(devConf.dtype)
+        self.decoder = decoder.to(devConf.device).to(devConf.dtype)
+        self.outProj = outputProject.to(devConf.device).to(devConf.dtype)
+        self.softmax = nn.Softmax(dim=1).to(devConf.device).to(devConf.dtype)
     
     def forward(self,
             input_ids: Tensor,

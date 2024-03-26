@@ -2,3 +2,4 @@ einops
 torchtext
 torch
 transformers
+portalocker
