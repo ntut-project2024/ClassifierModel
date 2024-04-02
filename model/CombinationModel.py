@@ -9,14 +9,18 @@ from model.BertDecoder.SentiClassifier import SentiClassifier
 
 class CombinationModel(nn.Module):
     def __init__(self,
-            distilBert: DistilBertModel,
             decoder: nn.Module,
             outputProject: nn.Linear,
+            distilBert: DistilBertModel=None,
             devConf: DevConf = DevConf()
         ):
         
         super(CombinationModel, self).__init__()
-        self.distilBert = distilBert.to(devConf.device).to(devConf.dtype)
+        if distilBert is None:
+            self.distilBert = DistilBertModel.from_pretrained('distilbert-base-uncased')
+        else:
+            self.distilBert = distilBert.to(devConf.device).to(devConf.dtype)
+
         self.decoder = decoder.to(devConf.device).to(devConf.dtype)
         self.outProj = outputProject.to(devConf.device).to(devConf.dtype)
         self.softmax = nn.Softmax(dim=1).to(devConf.device).to(devConf.dtype)
@@ -45,5 +49,5 @@ class CombinationModel(nn.Module):
             return self.softmax(self.outProj(output)), attnWeig
         return self.softmax(self.outProj(output))
     
-    def _getBertOutput(self, input_ids: Tensor, attention_mask: Tensor)->tuple[Tensor, Optional[Tensor]]:
+    def _getBertOutput(self, input_ids: Tensor, attention_mask: Tensor)->BatchEncoding:
         return self.distilBert(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states= self.decoder.IsNeedHiddenState)

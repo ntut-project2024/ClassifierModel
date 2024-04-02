@@ -25,8 +25,6 @@ class SentiClassifier(nn.Module):
 
         if conf.layerNum < 1:
             raise ValueError('layerNum must be greater than 0')
-        elif conf.layerNum == 1:
-            self.mapper = AttnBlocks(conf=conf, devConf=devConf)
         else:
             self.mapper = MapperFactory(conf=conf, blockType=blockType, devConf=devConf)
         self.IsNeedHiddenState = not (blockType == BlockType.LAST)
