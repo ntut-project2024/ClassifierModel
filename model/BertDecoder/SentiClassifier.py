@@ -9,9 +9,9 @@ from utils.const import BlockType
 from utils.AttnBlocksConf import AttnBlocksConf
 from utils.DevConf import DevConf
 from utils.AttnBlocks import AttnBlocks
-from model.blocks.CALBlocks import CALBlocks
-from model.blocks.CACBlocks import CACBlocks
-from model.blocks.CAPBlocks import CAPBlocks
+from module.blocks.CALBlocks import CALBlocks
+from module.blocks.CACBlocks import CACBlocks
+from module.blocks.CAPBlocks import CAPBlocks
 
 
 class SentiClassifier(nn.Module):

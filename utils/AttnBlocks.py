@@ -5,7 +5,7 @@ from transformers.modeling_outputs import BaseModelOutput
 
 from utils.AttnBlocksConf import AttnBlocksConf
 from utils.DevConf import DevConf
-from utils.MHABlock import MHABlock
+from module.MHABlock import MHABlock
 
 class AttnBlocks(nn.Module):
     def __init__(self, 
