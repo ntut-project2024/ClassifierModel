@@ -3,31 +3,38 @@ from typing import Optional
 import torch
 from torch import nn, Tensor
 
-from utils.DevConf import DevConf
+from module.Attention import Attention
 
 class MHABlock(nn.Module):
     def __init__(self, 
             hidDim: int,
             nHead: int,
+            headDim: int = None,
+            nKVHead: int = 1,
             dropout: float = 0.1,
             intermediateDim: int = None,
             batch_first: bool = True,
             device: str = 'cpu',
             dtype: torch.dtype = torch.float32
-        )->None:
+    )->None:
         super(MHABlock, self).__init__()
 
-        self.qProj = nn.Linear(hidDim, hidDim, device=device, dtype=dtype)
-        self.kProj = nn.Linear(hidDim, hidDim, device=device, dtype=dtype)
-        self.vProj = nn.Linear(hidDim, hidDim, device=device, dtype=dtype)
+        # self._mha = nn.MultiheadAttention(
+        #     hidDim,
+        #     nHead,
+        #     dropout=dropout,
+        #     batch_first=batch_first,
+        #     device=device,
+        #     dtype=dtype,
+        # )
 
-        self._mha = nn.MultiheadAttention(
+        self._mha = Attention(
             hidDim,
             nHead,
-            dropout=dropout,
-            batch_first=batch_first,
+            headDim=headDim,
+            nKVHead=nKVHead,
             device=device,
-            dtype=dtype,
+            dtype=dtype
         )
 
         self.norm = nn.LayerNorm(hidDim, device=device, dtype=dtype)
@@ -51,24 +58,32 @@ class MHABlock(nn.Module):
             attn_mask: Optional[Tensor] = None,
             average_attn_weights: bool = True,
             is_causal : bool = False
-        )->tuple[Tensor, Optional[Tensor]]:
-        
+        )->Tensor:
+        # batch = query.size(0)
+
         residual = query
 
-        query = self.qProj(query)
-        key = self.kProj(key)
-        value = self.vProj(value)
-
-        query, attnWeight = self._mha.forward(
-                query=query,
-                key=key,
-                value=value,
-                key_padding_mask=key_padding_mask,
-                need_weights=need_weights,
-                attn_mask=attn_mask,
-                average_attn_weights=average_attn_weights,
-                is_causal=is_causal
-            )
+        # q: Tensor = self.qProj(query)
+        # key = self.kProj(key)
+        # value = self.vProj(value)
+        
+        # query, attnWeight = self._mha.forward(
+        #         query=query,
+        #         key=key,
+        #         value=value,
+        #         key_padding_mask=key_padding_mask,
+        #         need_weights=need_weights,
+        #         attn_mask=attn_mask,
+        #         average_attn_weights=average_attn_weights,
+        #         is_causal=is_causal
+        #     )
+        
+        query = self._mha(
+            query=query,
+            kv=key,
+            key_padding_mask=key_padding_mask,
+            attn_mask=attn_mask
+        )
         
         query = self.norm(query + residual)
 
@@ -76,4 +91,4 @@ class MHABlock(nn.Module):
         query = self.ffn(query)
         query = self.outNorm(query + residual)
 
-        return query, attnWeight
+        return query
