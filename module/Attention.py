@@ -4,59 +4,62 @@ import torch
 from torch import nn, Tensor
 from torch.nn import functional as F
 
+from utils.AttnConf import AttnConf
+
 class Attention(nn.Module):
     def __init__(
             self,
-            hidDim: int,
-            nHead: int,
-            headDim: int = None,
-            nKVHead: int = 1,
+            # hidDim: int,
+            # nHead: int,
+            # headDim: int = None,
+            # nKVHead: int = None,
+            attnConf: AttnConf = None,
             # batch_first: bool = True,
             device: str = 'cpu',
             dtype: torch.dtype = torch.float32) -> None:
         super(Attention, self).__init__()
 
-        assert nHead % nKVHead == 0
-        self.nHead = nHead
-        self.nKVHead = nKVHead
-        self.nQPerKvHead = nHead // nKVHead
-
-        self.headDim = hidDim // nHead if headDim is None else headDim
-        self.hidDim = hidDim
-
-        self.scale = headDim ** -0.5
+        self._SetVariables(attnConf)
 
         # self.batch_first = batch_first
         
         self.qProj = nn.Linear(
-            hidDim,
-            nHead*headDim,
+            self.hidDim,
+            self.nHead * self.headDim,
             device=device,
             dtype=dtype)
 
         self.kvProj = nn.Linear(
-            hidDim,
-            (2*nKVHead) * headDim,
+            self.hidDim,
+            (2*self.nKVHead) * self.headDim,
             device=device,
             dtype=dtype)
         
         self.outProj = nn.Linear(
-            nHead*headDim,
-            hidDim,
+            self.nHead * self.headDim,
+            self.hidDim,
             device=device,
             dtype=dtype)
+
+    def _SetVariables(self, attnConf: AttnConf) -> None:
+        self.hidDim = attnConf.hidDim
+        self.nHead = attnConf.nHead
+        self.headDim = attnConf.headDim
+        self.nKVHead = attnConf.nKVHead
+        if attnConf.nKVHead is not None:
+            self.nQPerKvHead = attnConf.nQPerKvHead
+        self.scale = attnConf.scale
 
     def forward(
         self,
         query: Tensor,
         kv: Tensor,
         key_padding_mask: Optional[Tensor] = None,
-        # need_weights: bool = True,
+        need_weights: bool = True,
         attn_mask: Optional[Tensor] = None,
         # average_attn_weights: bool = True,
         # is_causal : bool = False
     )->Tensor:
-        
         assert query.dim() == 3
         assert kv.dim() == 3
         batch, len, _ = query.shape
@@ -65,24 +68,37 @@ class Attention(nn.Module):
         kv = self.kvProj(kv)
         k, v = torch.chunk(kv, 2, dim=-1)
 
-        q = q.view(batch, -1, self.nHead, self.headDim).transpose(1, 2)
-        k = k.view(batch, -1, self.nKVHead, self.nQPerKvHead, self.headDim).transpose(1, 2)
-        v = v.view(batch, -1, self.nKVHead, self.nQPerKvHead, self.headDim).transpose(1, 2)
+        q, k, v = self._TransformQKV(q, k, v, batch)
 
-        attn_output = torch.matmul(q, k.transpose(2, 3)) / (self.headDim ** 0.5)
+        qk = torch.matmul(q, k.transpose(2, 3)) * self.scale
 
         if attn_mask is not None:
-            attn_output += attn_mask
+            qk += attn_mask
 
         if key_padding_mask is not None:
-            attn_output = attn_output.masked_fill(key_padding_mask.unsqueeze(1).unsqueeze(2), -1e9)
+            qk = qk.masked_fill(key_padding_mask.unsqueeze(1).unsqueeze(2), -1e9)
 
-        attn_output = F.softmax(attn_output, dim=-1)
+        qk = F.softmax(qk, dim=-1)
 
-        attn_output = torch.matmul(attn_output, v)
+        attn_output = torch.matmul(qk, v)
 
         attn_output = attn_output.transpose(1, 2).contiguous().view(
             batch, len, -1)
         output = self.outProj(attn_output)
 
-        return output
+        return output, qk if need_weights else None
+    
+    def _TransformQKV(self, q: Tensor, k: Tensor, v: Tensor, batch: int) -> tuple[Tensor, Tensor, Tensor]:
+        q = q.view(batch, -1, self.nHead, self.headDim)
+        k = k.view(batch, -1, self.nKVHead, self.headDim)
+        v = v.view(batch, -1, self.nKVHead, self.headDim)
+
+        if self.nKVHead is not None:
+            k = k.repeat_interleave(self.nQPerKvHead, dim=2)
+            v = v.repeat_interleave(self.nQPerKvHead, dim=2)
+        
+        q = q.transpose(1, 2)
+        k = k.transpose(1, 2)
+        v = v.transpose(1, 2)
+
+        return q, k, v

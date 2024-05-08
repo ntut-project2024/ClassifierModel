@@ -4,13 +4,15 @@ import torch
 from torch import nn, Tensor
 
 from module.Attention import Attention
+from utils.AttnConf import AttnConf
 
 class MHABlock(nn.Module):
     def __init__(self, 
-            hidDim: int,
-            nHead: int,
-            headDim: int = None,
-            nKVHead: int = 1,
+            # hidDim: int,
+            # nHead: int,
+            # headDim: int = None,
+            # nKVHead: int = 1,
+            attnConf: AttnConf = None,
             dropout: float = 0.1,
             intermediateDim: int = None,
             batch_first: bool = True,
@@ -28,11 +30,14 @@ class MHABlock(nn.Module):
         #     dtype=dtype,
         # )
 
+        hidDim = attnConf.hidDim
+        
         self._mha = Attention(
-            hidDim,
-            nHead,
-            headDim=headDim,
-            nKVHead=nKVHead,
+            # hidDim,
+            # nHead,
+            # headDim=headDim,
+            # nKVHead=nKVHead,
+            attnConf=attnConf,
             device=device,
             dtype=dtype
         )
@@ -78,10 +83,11 @@ class MHABlock(nn.Module):
         #         is_causal=is_causal
         #     )
         
-        query = self._mha(
+        query, attnWeight = self._mha(
             query=query,
             kv=key,
             key_padding_mask=key_padding_mask,
+            need_weights=need_weights,
             attn_mask=attn_mask
         )
         
@@ -91,4 +97,4 @@ class MHABlock(nn.Module):
         query = self.ffn(query)
         query = self.outNorm(query + residual)
 
-        return query
+        return query, attnWeight

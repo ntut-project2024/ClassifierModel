@@ -5,6 +5,7 @@ from transformers.modeling_outputs import BaseModelOutput
 
 from utils.AttnBlocksConf import AttnBlocksConf
 from utils.DevConf import DevConf
+from utils.AttnConf import AttnConf
 from module.MHABlock import MHABlock
 
 class AttnBlocks(nn.Module):
@@ -15,8 +16,11 @@ class AttnBlocks(nn.Module):
         super(AttnBlocks, self).__init__()
 
         self._mha = nn.ModuleList([MHABlock(
-            conf.hidDim,
-            conf.nHead,
+            AttnConf(
+                hidDim = conf.hidDim,
+                nHead = conf.nHead,
+                nKVHead = 2
+            ),
             batch_first=True,
             device=devConf.device,
             dtype=devConf.dtype,
