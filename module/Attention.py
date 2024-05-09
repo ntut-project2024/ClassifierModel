@@ -4,7 +4,7 @@ import torch
 from torch import nn, Tensor
 from torch.nn import functional as F
 
-from utils.AttnConf import AttnConf
+from utils.AttnBlocksConf import AttnBlocksConf
 
 class Attention(nn.Module):
     def __init__(
@@ -13,7 +13,7 @@ class Attention(nn.Module):
             # nHead: int,
             # headDim: int = None,
             # nKVHead: int = None,
-            attnConf: AttnConf = None,
+            attnConf: AttnBlocksConf = None,
             # batch_first: bool = True,
             device: str = 'cpu',
             dtype: torch.dtype = torch.float32) -> None:
@@ -41,12 +41,12 @@ class Attention(nn.Module):
             device=device,
             dtype=dtype)
 
-    def _SetVariables(self, attnConf: AttnConf) -> None:
+    def _SetVariables(self, attnConf: AttnBlocksConf) -> None:
         self.hidDim = attnConf.hidDim
         self.nHead = attnConf.nHead
         self.headDim = attnConf.headDim
         self.nKVHead = attnConf.nKVHead
-        if attnConf.nKVHead is not None:
+        if attnConf.nQPerKvHead is not None:
             self.nQPerKvHead = attnConf.nQPerKvHead
         self.scale = attnConf.scale
 
@@ -93,7 +93,7 @@ class Attention(nn.Module):
         k = k.view(batch, -1, self.nKVHead, self.headDim)
         v = v.view(batch, -1, self.nKVHead, self.headDim)
 
-        if self.nKVHead is not None:
+        if self.nKVHead != self.nHead:
             k = k.repeat_interleave(self.nQPerKvHead, dim=2)
             v = v.repeat_interleave(self.nQPerKvHead, dim=2)
         

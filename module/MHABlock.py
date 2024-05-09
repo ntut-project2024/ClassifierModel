@@ -4,7 +4,7 @@ import torch
 from torch import nn, Tensor
 
 from module.Attention import Attention
-from utils.AttnConf import AttnConf
+from utils.AttnBlocksConf import AttnBlocksConf
 
 class MHABlock(nn.Module):
     def __init__(self, 
@@ -12,7 +12,7 @@ class MHABlock(nn.Module):
             # nHead: int,
             # headDim: int = None,
             # nKVHead: int = 1,
-            attnConf: AttnConf = None,
+            attnConf: AttnBlocksConf = None,
             dropout: float = 0.1,
             intermediateDim: int = None,
             batch_first: bool = True,

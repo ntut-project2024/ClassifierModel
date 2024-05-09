@@ -8,11 +8,13 @@ from utils.DevConf import DevConf
 from utils.AttnBlocks import AttnBlocks
 
 class CAPBlocks(AttnBlocks):
-    def __init__(self, 
+    def __init__(self,
+            layerNum: int,
             conf: AttnBlocksConf,
             devConf: DevConf = DevConf()
         )->None:
         super(CAPBlocks, self).__init__(
+            layerNum=layerNum,
             conf=conf,
             devConf=devConf
         )

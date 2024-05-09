@@ -5,28 +5,29 @@ from transformers.modeling_outputs import BaseModelOutput
 
 from utils.AttnBlocksConf import AttnBlocksConf
 from utils.DevConf import DevConf
-from utils.AttnConf import AttnConf
 from module.MHABlock import MHABlock
 
 class AttnBlocks(nn.Module):
-    def __init__(self, 
+    def __init__(self,
+            layerNum: int,
             conf: AttnBlocksConf,
             devConf: DevConf = DevConf()
         )->None:
         super(AttnBlocks, self).__init__()
 
         self._mha = nn.ModuleList([MHABlock(
-            AttnConf(
-                hidDim = conf.hidDim,
-                nHead = conf.nHead,
-                nKVHead = 2
-            ),
+            # AttnConf(
+            #     hidDim = conf.hidDim,
+            #     nHead = conf.nHead,
+            #     nKVHead = conf.nKVHead
+            # ),
+            attnConf = conf,
             batch_first=True,
             device=devConf.device,
             dtype=devConf.dtype,
-        ) for _ in range(conf.layerNum)])
+        ) for _ in range(layerNum)])
 
-        self._layerNum = conf.layerNum
+        self._layerNum = layerNum
         self._devConf = devConf
 
     def forward(

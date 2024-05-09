@@ -8,11 +8,13 @@ from utils.DevConf import DevConf
 from utils.AttnBlocks import AttnBlocks
 
 class CALBlocks(AttnBlocks):
-    def __init__(self, 
+    def __init__(self,
+            layerNum: int,
             conf: AttnBlocksConf,
             devConf: DevConf = DevConf()
         )->None:
         super(CALBlocks, self).__init__(
+            layerNum=layerNum,
             conf=conf,
             devConf=devConf
         )
@@ -28,8 +30,7 @@ class CALBlocks(AttnBlocks):
             is_causal : bool = False
         )->tuple[Tensor, Optional[Tensor]]:
 
-        kv = (kv.last_hidden_state
-            )
+        kv = kv.last_hidden_state
 
         query, attnWeight = self._mha[0](
                 query=query,
