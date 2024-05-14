@@ -16,7 +16,8 @@ class Attention(nn.Module):
             attnConf: AttnBlocksConf = None,
             # batch_first: bool = True,
             device: str = 'cpu',
-            dtype: torch.dtype = torch.float32) -> None:
+            dtype: torch.dtype = torch.float32
+    ) -> None:
         super(Attention, self).__init__()
 
         self._SetVariables(attnConf)
@@ -59,7 +60,7 @@ class Attention(nn.Module):
         attn_mask: Optional[Tensor] = None,
         # average_attn_weights: bool = True,
         # is_causal : bool = False
-    )->Tensor:
+    ) -> tuple[Tensor, Optional[Tensor]]:
         assert query.dim() == 3
         assert kv.dim() == 3
         batch, len, _ = query.shape
@@ -78,7 +79,7 @@ class Attention(nn.Module):
         if key_padding_mask is not None:
             qk = qk.masked_fill(key_padding_mask.unsqueeze(1).unsqueeze(2), -1e9)
 
-        qk = F.softmax(qk, dim=-1)
+        qk = F.softmax(qk.float(), dim=-1).type_as(q)
 
         attn_output = torch.matmul(qk, v)
 
