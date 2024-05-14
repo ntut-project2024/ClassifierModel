@@ -4,3 +4,4 @@ torchdata
 torch
 transformers
 portalocker
+pandas

@@ -17,13 +17,13 @@ class CombinationModel(nn.Module):
         
         super(CombinationModel, self).__init__()
         if distilBert is None:
-            self.distilBert = DistilBertModel.from_pretrained('distilbert/distilbert-base-multilingual-cased', cache_dir="./cache/model")
+            self.distilBert = DistilBertModel.from_pretrained('distilbert/distilbert-base-multilingual-cased', cache_dir="./cache/model").to(devConf.device).to(devConf.dtype)
         else:
             self.distilBert = distilBert.to(devConf.device).to(devConf.dtype)
 
         self.decoder = decoder.to(devConf.device).to(devConf.dtype)
         self.outProj = nn.Linear(768, nClass, device=devConf.device, dtype=devConf.dtype)
-        self.softmax = nn.Softmax(dim=1).to(devConf.device).to(devConf.dtype)
+        self.activate = nn.Sigmoid().to(devConf.device).to(devConf.dtype)
     
     def forward(self,
             input_ids: Tensor,
@@ -46,8 +46,8 @@ class CombinationModel(nn.Module):
             output, attnWeig = self.decoder(output, returnAttnWeight=True)
 
         if returnAttnWeight:
-            return self.softmax(self.outProj(output)), attnWeig
-        return self.softmax(self.outProj(output))
+            return self.activate(self.outProj(output)), attnWeig
+        return self.activate(self.outProj(output))
     
     def _getBertOutput(self, input_ids: Tensor, attention_mask: Tensor)->BatchEncoding:
         return self.distilBert(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states= self.decoder.IsNeedHiddenState)
