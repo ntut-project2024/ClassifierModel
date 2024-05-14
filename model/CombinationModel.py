@@ -9,20 +9,20 @@ from model.BertDecoder.SentiClassifier import SentiClassifier
 
 class CombinationModel(nn.Module):
     def __init__(self,
+            nClass: int,
             decoder: nn.Module,
-            outputProject: nn.Linear,
             distilBert: DistilBertModel=None,
             devConf: DevConf = DevConf()
         ):
         
         super(CombinationModel, self).__init__()
         if distilBert is None:
-            self.distilBert = DistilBertModel.from_pretrained('distilbert-base-uncased')
+            self.distilBert = DistilBertModel.from_pretrained('distilbert/distilbert-base-multilingual-cased', cache_dir="./cache/model")
         else:
             self.distilBert = distilBert.to(devConf.device).to(devConf.dtype)
 
         self.decoder = decoder.to(devConf.device).to(devConf.dtype)
-        self.outProj = outputProject.to(devConf.device).to(devConf.dtype)
+        self.outProj = nn.Linear(768, nClass, device=devConf.device, dtype=devConf.dtype)
         self.softmax = nn.Softmax(dim=1).to(devConf.device).to(devConf.dtype)
     
     def forward(self,
