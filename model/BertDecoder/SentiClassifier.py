@@ -29,17 +29,18 @@ class SentiClassifier(nn.Module):
         else:
             self.mapper = MapperFactory(layerNum=layerNum, conf=conf, blockType=blockType, devConf=devConf)
         self.IsNeedHiddenState = not (blockType == BlockType.LAST)
-        self._Q = nn.Parameter(torch.randn(1, conf.hidDim, device=devConf.device, dtype=devConf.dtype))
-        
+        self._Q = nn.Linear(1, conf.hidDim, bias=False, device=devConf.device, dtype=devConf.dtype)
+        self.token = nn.Parameter(torch.tensor([1], device=devConf.device, dtype=devConf.dtype), requires_grad=False)
         self._layerNum = layerNum
-    
+        self._devConf = devConf
     def forward(self,
             input: BaseModelOutput,
             returnAttnWeight: bool=False
         )->tuple[Tensor, Optional[Tensor]]:
 
         batch = input.last_hidden_state.size(0)
-        sentVec, attnWeight = self.mapper.forward(repeat(self._Q, "l d -> b l d", b=batch), input, need_weights=True)
+        q = self._Q(self.token)
+        sentVec, attnWeight = self.mapper.forward(repeat(q, "d -> b l d", b=batch, l=1), input, need_weights=True)
         
         if returnAttnWeight:
             return sentVec.squeeze(1), attnWeight

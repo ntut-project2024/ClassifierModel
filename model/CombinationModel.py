@@ -10,7 +10,7 @@ from model.BertDecoder.SentiClassifier import SentiClassifier
 class CombinationModel(nn.Module):
     def __init__(self,
             nClass: int,
-            decoder: nn.Module,
+            decoder: SentiClassifier,
             distilBert: DistilBertModel=None,
             devConf: DevConf = DevConf()
         ):
@@ -22,6 +22,7 @@ class CombinationModel(nn.Module):
             self.distilBert = distilBert.to(devConf.device).to(devConf.dtype)
 
         self.decoder = decoder.to(devConf.device).to(devConf.dtype)
+        self.decoder._devConf = devConf
         self.outProj = nn.Linear(768, nClass, device=devConf.device, dtype=devConf.dtype)
         self.activate = nn.Sigmoid().to(devConf.device).to(devConf.dtype)
     
