@@ -23,8 +23,9 @@ class CombinationModel(nn.Module):
 
         self.decoder = decoder.to(devConf.device).to(devConf.dtype)
         self.decoder._devConf = devConf
-        self.outProj = nn.Linear(768, nClass, device=devConf.device, dtype=devConf.dtype)
+        self.outProj = nn.Linear(768, nClass*2, device=devConf.device, dtype=devConf.dtype)
         self.activate = nn.Sigmoid().to(devConf.device).to(devConf.dtype)
+        self.nClass = nClass
     
     def forward(self,
             input_ids: Tensor,
@@ -46,9 +47,12 @@ class CombinationModel(nn.Module):
         else:
             output, attnWeig = self.decoder(output, returnAttnWeight=True)
 
+        output = self.activate(self.outProj(output))
+        output = output.view(-1, self.nClass, 2)
+        
         if returnAttnWeight:
-            return self.activate(self.outProj(output)), attnWeig
-        return self.activate(self.outProj(output))
+            return output, attnWeig
+        return output
     
     def _getBertOutput(self, input_ids: Tensor, attention_mask: Tensor)->BatchEncoding:
         return self.distilBert(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states= self.decoder.IsNeedHiddenState)
